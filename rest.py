@@ -3,29 +3,18 @@ import feedparser
 import langid
 from keybert import KeyBERT
 from transformers import pipeline
-from transformers import MarianMTModel, MarianTokenizer
-from nltk.tokenize import sent_tokenize
-from nltk.tokenize import LineTokenizer
-import math
 import requests
-import torch
-import nltk
 import os
+from tasks import translation
 
 #nltk.download('punkt')
 os.environ['CURL_CA_BUNDLE'] = ''
 
 requests.Session().verify = False
 
-if torch.cuda.is_available():
-    dev = "cuda"
-else:
-    dev = "cpu"
-device = torch.device(dev)
-
 # TODO execute before first request and load models
 def init_models():
-    print('hi')
+    translation.init()
 
 
 def create_app():
@@ -34,7 +23,7 @@ def create_app():
 
     @app.route("/")
     def hello_world():
-        # TODO welche uuids muss man tätigen
+        # TODO
         return "Help Information Incomming"
 
     @app.route('/<uuid>', methods=['GET', 'POST'])
@@ -121,37 +110,9 @@ def get_language(body):
 
 
 def get_translation(body):
-    translation_en_de = pipeline("translation_en_to_de")
+    action = body['action']
     input = body.get('input')
-    mname = 'Helsinki-NLP/opus-mt-de-en'
-    tokenizer = MarianTokenizer.from_pretrained(mname)
-    model = MarianMTModel.from_pretrained(mname)
-    model.to(device)
-
-    if input:
-        if body['action'] == 'translate_en_de':
-            output = translation_en_de(input, max_length=512)
-            body['output'] = output[0]['translation_text']
-        if body['action'] == 'translate_de_en':
-            lt = LineTokenizer()
-            batch_size = 8
-            paragraphs = lt.tokenize(input)
-            translated_paragraphs = []
-
-            for paragraph in paragraphs:
-                sentences = sent_tokenize(paragraph)
-                batches = math.ceil(len(sentences) / batch_size)
-                translated = []
-                for i in range(batches):
-                    sent_batch = sentences[i * batch_size:(i + 1) * batch_size]
-                    model_inputs = tokenizer(sent_batch, return_tensors="pt", padding=True, truncation=True).to(device)
-                    with torch.no_grad():
-                        translated_batch = model.generate(**model_inputs)
-                    translated += translated_batch
-                translated = [tokenizer.decode(t, skip_special_tokens=True) for t in translated]
-                translated_paragraphs += [" ".join(translated)]
-            translated_text = "\n".join(translated_paragraphs)
-            body['output'] = translated_text
+    body['output'] = translation.translate(action, input)
     return jsonify(body)
 
 
