@@ -10,7 +10,7 @@ import os
 os.environ['CURL_CA_BUNDLE'] = ''
 
 def init():
-    print('init model')
+    print('init translation model')
     global device, tokenizer_EN_DE, model_EN_DE, tokenizer_DE_EN, model_DE_EN
     if torch.cuda.is_available():
         dev = "cuda"
@@ -19,19 +19,20 @@ def init():
     device = torch.device(dev)
 
     # Helsinki-NLP/opus-mt-de-en
-    model_path = "../models/DE_EN"
+    model_path = "Helsinki-NLP/opus-mt-de-en"
     tokenizer_DE_EN = MarianTokenizer.from_pretrained(model_path, model_max_length=512)
     model_DE_EN = MarianMTModel.from_pretrained(model_path)
     model_DE_EN.to(device)
 
     # Helsinki-NLP/opus-mt-en-de
-    model_path = "../models/EN_DE"
+    model_path = "Helsinki-NLP/opus-mt-en-de"
     tokenizer_EN_DE = MarianTokenizer.from_pretrained(model_path, model_max_length=512)
     model_EN_DE = MarianMTModel.from_pretrained(model_path)
     model_EN_DE.to(device)
 
 
 def translate(action, input_text):
+    global translated_text
     print('start translation')
     if action == 'translate_de_en':
         if (tokenizer_DE_EN is not None) and (model_DE_EN is not None) and (device is not None):
@@ -68,5 +69,4 @@ def translate(action, input_text):
             print('english to german model error')
 
     return translated_text
-
 

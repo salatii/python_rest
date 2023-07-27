@@ -1,11 +1,12 @@
 from flask import Flask, request, jsonify
 import feedparser
-import langid
-from keybert import KeyBERT
-from transformers import pipeline
 import requests
 import os
 from tasks import translation
+from tasks import summarization
+from tasks import sentiment
+from tasks import lng_detection
+from tasks import keywords
 
 #nltk.download('punkt')
 os.environ['CURL_CA_BUNDLE'] = ''
@@ -15,6 +16,10 @@ requests.Session().verify = False
 # TODO execute before first request and load models
 def init_models():
     translation.init()
+    summarization.init()
+    sentiment.init()
+    keywords.init()
+    keywords.init2()
 
 
 def create_app():
@@ -83,29 +88,25 @@ def get_rss():
 
 def get_keywords(body):
     input = body.get('input')
-    kw_model = KeyBERT()
-    body['output'] = keywords = kw_model.extract_keywords(input)
+    body['output'] = keywords.extract2(input)
     return jsonify(body)
 
 
 def get_summary(body):
     input = body.get('input')
-    summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
-    body['output'] = summarizer(input, max_length=130, min_length=30, do_sample=False)
+    body['output'] = summarization.summarize(input)
     return jsonify(body)
 
 
 def get_sentiment(body):
     input = body.get('input')
-    classifier = pipeline("sentiment-analysis")
-    body['output'] = classifier(input)
+    body['output'] = sentiment.sentiment(input)
     return jsonify(body)
 
 
 def get_language(body):
     input = body.get('input')
-    detected_language, confidence = langid.classify(input)
-    body['output'] = detected_language, confidence
+    body['output'] = lng_detection.detect(input)
     return jsonify(body)
 
 

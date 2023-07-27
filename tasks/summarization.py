@@ -3,12 +3,7 @@ import os
 import torch
 
 os.environ['CURL_CA_BUNDLE'] = ''
-
 # https://www.youtube.com/watch?v=Yo5Hw8aV3vY   https://huggingface.co/docs/transformers/model_doc/pegasus
-model_name = "google/pegasus-xsum"
-device = "cuda" if torch.cuda.is_available() else "cpu"
-tokenizer = PegasusTokenizer.from_pretrained(model_name)
-model = PegasusForConditionalGeneration.from_pretrained(model_name).to(device)
 
 src_text = [
     """It goes without saying that humans (mammals identifiable as those that stand upright and are comparatively 
@@ -41,16 +36,16 @@ src_text = [
     helping humans perform certain motions and actions."""
 ]
 
-batch = tokenizer(src_text, truncation=True, padding="longest", return_tensors="pt").to(device)
-translated = model.generate(**batch)
-tgt_text = tokenizer.batch_decode(translated, skip_special_tokens=True)
-
-print(tgt_text)
-
-
 def init():
-    print('init')
+    print('init summarization model')
+    global device, tokenizer, model
+    model_name = "google/pegasus-xsum"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    tokenizer = PegasusTokenizer.from_pretrained(model_name)
+    model = PegasusForConditionalGeneration.from_pretrained(model_name).to(device)
 
-
-def summarize():
-    print('summarize')
+def summarize(input_text):
+    batch = tokenizer(input_text, truncation=True, padding="longest", return_tensors="pt").to(device)
+    translated = model.generate(**batch)
+    sum_txt = tokenizer.batch_decode(translated, skip_special_tokens=True)
+    return sum_txt
