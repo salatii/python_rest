@@ -8,6 +8,8 @@ from tasks import sentiment
 from tasks import lng_detection
 from tasks import keywords
 
+openaikey = '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'
+
 #nltk.download('punkt')
 os.environ['CURL_CA_BUNDLE'] = ''
 
